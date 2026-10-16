@@ -13,8 +13,8 @@ msgstr "qBittorrent 是一个基于 QT 的跨平台的开源 BitTorrent 客户�
 msgid "WebUI Listen port"
 msgstr "WebUI 监听端口"
 
-msgid "Configuration files Path"
-msgstr "配置文件路径"
+msgid "Download directory"
+msgstr "下载目录"
 
 msgid "RUNNING"
 msgstr "运行中"

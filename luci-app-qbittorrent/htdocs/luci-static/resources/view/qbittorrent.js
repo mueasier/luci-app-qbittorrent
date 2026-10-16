@@ -45,7 +45,7 @@ return view.extend({
 
 	render: function(data) {
 		var m, s, o;
-		var webport = uci.get(data[0], 'config', 'port') || '8080';
+		var webport = uci.get(data[0], 'config', 'http_port') || '8080';
 
 		m = new form.Map('qbittorrent', _('qBittorrent'),
 			_('qBittorrent is a cross-platform free and open-source BitTorrent client. Default username & password: admin / adminadmin'));
@@ -71,13 +71,13 @@ return view.extend({
 		o.default = o.disabled;
 		o.rmempty = false;
 
-		o = s.option(form.Value, 'port', _('WebUI Listen port'));
+		o = s.option(form.Value, 'http_port', _('WebUI Listen port'));
 		o.datatype = 'port';
 		o.default = '8080';
 		o.rmempty = false;
 
-		o = s.option(form.Value, 'profile_dir', _('Configuration files Path'));
-		o.default = '/etc/qbittorrent';
+		o = s.option(form.Value, 'download_dir', _('Download directory'));
+		o.default = '/mnt/download';
 		o.rmempty = false;
 
 		return m.render();
