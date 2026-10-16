@@ -52,14 +52,20 @@ jobs:
           printf '%s  %s\n' "$SDK_SHA256" "$RUNNER_TEMP/$SDK_ARCHIVE" | sha256sum --check
           mkdir -p "$GITHUB_WORKSPACE/sdk"
           tar --zstd -xf "$RUNNER_TEMP/$SDK_ARCHIVE" -C "$GITHUB_WORKSPACE/sdk" --strip-components=1
-          # Use the same feed commits as the official 25.12.1 release.
-          curl --fail --location --retry 5 "$base_url/feeds.buildinfo" -o sdk/feeds.conf.default
+          # The SDK's extra base feed supplies core libraries such as zlib/OpenSSL.
+          # feeds.buildinfo lists only external feeds, so preserve base when merging.
+          grep -E '^src-git[[:space:]]+--root=package[[:space:]]+base[[:space:]]' \
+            sdk/feeds.conf.default > sdk/feeds.conf
+          curl --fail --location --retry 5 "$base_url/feeds.buildinfo" -o sdk/release-feeds.buildinfo
+          cat sdk/release-feeds.buildinfo >> sdk/feeds.conf
 
       - name: Install feeds and the local LuCI package
         working-directory: sdk
         run: |
           ./scripts/feeds update -a
           ./scripts/feeds install -a
+          test -f package/feeds/base/zlib/Makefile
+          test -f package/feeds/base/openssl/Makefile
           # Replace the feed's LuCI package; use its Enhanced Edition backend and Qt.
           rm -f package/feeds/luci/luci-app-qbittorrent
           cp -a "$GITHUB_WORKSPACE/luci-app-qbittorrent" package/luci-app-qbittorrent
@@ -85,6 +91,8 @@ jobs:
           grep -qx 'CONFIG_PACKAGE_qbittorrent-enhanced-edition=m' .config
           grep -qx 'CONFIG_PACKAGE_luci-app-qbittorrent=m' .config
           grep -qx 'CONFIG_PACKAGE_luci-i18n-qbittorrent-zh-cn=m' .config
+          grep -Eq '^CONFIG_PACKAGE_zlib=[my]$' .config
+          grep -Eq '^CONFIG_PACKAGE_libopenssl=[my]$' .config
 
       - name: Compile LuCI and its dependencies
         working-directory: sdk
@@ -95,14 +103,14 @@ jobs:
       - name: Collect packages
         run: |
           mkdir -p artifacts
-          find sdk/bin/packages -type f \( -name '*.apk' -o -name '*.ipk' \) \
+          find sdk/bin -type f \( -name '*.apk' -o -name '*.ipk' \) \
             -exec cp -t artifacts/ {} +
           # Fail if the expected backend, LuCI package or translation is missing.
           find artifacts -type f -name 'qbittorrent-enhanced-edition[_.-]*' | grep -q .
           find artifacts -type f -name 'luci-app-qbittorrent[_.-]*' | grep -q .
           find artifacts -type f -name 'luci-i18n-qbittorrent-zh-cn[_.-]*' | grep -q .
           cp sdk/.config artifacts/build.config
-          cp sdk/feeds.conf.default artifacts/feeds.buildinfo
+          cp sdk/feeds.conf artifacts/feeds.buildinfo
           cd artifacts
           find . -maxdepth 1 -type f \( -name '*.apk' -o -name '*.ipk' \) -print0 \
             | sort -z | xargs -0 sha256sum > sha256sums
