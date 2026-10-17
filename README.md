@@ -4,6 +4,13 @@
 界面使用增强版服务的 UCI 配置：`enabled`、`http_port`、`download_dir`；
 服务名和配置文件仍为 `qbittorrent`，程序配置由服务保存在 `/etc/qBittorrent/`。
 
+LuCI 界面同步自 ImmortalWrt 25.12.1 发布时的
+[`luci-app-qbittorrent`](https://github.com/immortalwrt/luci/tree/ed7692cb08a953e2e503287e0337c8b548cf4ba5/applications/luci-app-qbittorrent)，
+包含设置页、自动刷新的日志页及简体中文翻译。日志读取
+`/var/log/qbittorrent/qbittorrent.log`；增强版服务停止时会清理该日志目录。
+应用文件保留官方实现，仅在 Makefile 中调整增强版依赖、独立 SDK 的
+`luci.mk` 引用路径和软件包版本。LuCI 与中文包均使用 `1.0.1-r3` 版本。
+
 ## GitHub Actions 编译
 
 工作流：`.github/workflows/build.yml`。
@@ -17,8 +24,15 @@
 **Actions → Build for ImmortalWrt 25.12.1 → Run workflow** 手动触发。
 完成后在该次运行的 **Artifacts** 下载软件包压缩包。
 
-工作流下载并校验官方 SDK，使用 25.12.1 发布时的 feeds 提交，编译本仓库的
-LuCI、简体中文翻译及其依赖（包括增强版后端），保存编译配置、校验和及日志。
+工作流下载并校验官方 SDK，使用 25.12.1 发布时的 feeds 提交。
+最终软件包压缩包名为 `luci-app-qbittorrent-zh-cn-immortalwrt-25.12.1-mediatek-filogic-gl-mt2500`，
+其中仅包含以下两个安装包，以及编译配置、feeds 信息和校验和：
+
+- `luci-app-qbittorrent-1.0.1-r3.apk`
+- `luci-i18n-qbittorrent-zh-cn-1.0.1-r3.apk`
+
+编译时仍会构建所需依赖（包括增强版后端），这些依赖安装包不收集到最终产物中。
+设备端通过软件源安装增强版后端及依赖，命令见下方“安装”。构建日志单独上传。
 这是软件包编译，不生成可刷写固件；GL-MT2500 的不同 PHY 版本使用相同的软件包架构。
 
 仅将本仓库的 `luci-app-qbittorrent/` 放入 SDK。本仓库其余 `qbittorrent/`、

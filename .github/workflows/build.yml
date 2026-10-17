@@ -100,15 +100,19 @@ jobs:
           set -o pipefail
           make -j"$(nproc)" package/luci-app-qbittorrent/compile V=s 2>&1 | tee build.log
 
-      - name: Collect packages
+      - name: Collect LuCI and Chinese translation packages
         run: |
           mkdir -p artifacts
-          find sdk/bin -type f \( -name '*.apk' -o -name '*.ipk' \) \
+          find sdk/bin -type f \( \
+            -name 'luci-app-qbittorrent-*.apk' -o \
+            -name 'luci-app-qbittorrent_*.ipk' -o \
+            -name 'luci-i18n-qbittorrent-zh-cn-*.apk' -o \
+            -name 'luci-i18n-qbittorrent-zh-cn_*.ipk' \) \
             -exec cp -t artifacts/ {} +
-          # Fail if the expected backend, LuCI package or translation is missing.
-          find artifacts -type f -name 'qbittorrent-enhanced-edition[_.-]*' | grep -q .
+          # Require both requested packages and exclude all dependency packages.
           find artifacts -type f -name 'luci-app-qbittorrent[_.-]*' | grep -q .
           find artifacts -type f -name 'luci-i18n-qbittorrent-zh-cn[_.-]*' | grep -q .
+          test "$(find artifacts -type f \( -name '*.apk' -o -name '*.ipk' \) | wc -l)" -eq 2
           cp sdk/.config artifacts/build.config
           cp sdk/feeds.conf artifacts/feeds.buildinfo
           cd artifacts
@@ -118,7 +122,7 @@ jobs:
       - name: Upload packages
         uses: actions/upload-artifact@v4
         with:
-          name: qbittorrent-enhanced-immortalwrt-25.12.1-mediatek-filogic-gl-mt2500
+          name: luci-app-qbittorrent-zh-cn-immortalwrt-25.12.1-mediatek-filogic-gl-mt2500
           path: artifacts/
           if-no-files-found: error
           retention-days: 30
